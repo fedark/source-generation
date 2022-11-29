@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net5.0</TargetFramework>
+	<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+  </PropertyGroup>
+
+  <ItemGroup>
+	<ProjectReference Include="..\Generator\Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+	<ProjectReference Include="..\GeneratorAttributes\GeneratorAttributes.csproj" />
+    <ProjectReference Include="..\MongoDbAccess\MongoDbAccess.csproj" />
+  </ItemGroup>
+	
+</Project>
