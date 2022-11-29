@@ -12,7 +12,6 @@ namespace Generators
 	{
         public void Execute(GeneratorExecutionContext context)
         {
-			throw new System.Exception("init");
 			var syntaxReceiver = (CollectionAttributeSyntaxReceiver)context.SyntaxReceiver;
 			if (syntaxReceiver is null)
 			{
@@ -27,8 +26,6 @@ namespace Generators
 
         public void Initialize(GeneratorInitializationContext context)
         {
-			Debugger.Launch();
-			throw new System.Exception("init");
 			context.RegisterForSyntaxNotifications(() => new CollectionAttributeSyntaxReceiver());
         }
     }

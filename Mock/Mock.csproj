@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-	<ProjectReference Include="..\Generator\Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+	<ProjectReference Include="..\Generators\Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
 	<ProjectReference Include="..\GeneratorAttributes\GeneratorAttributes.csproj" />
     <ProjectReference Include="..\MongoDbAccess\MongoDbAccess.csproj" />
   </ItemGroup>
