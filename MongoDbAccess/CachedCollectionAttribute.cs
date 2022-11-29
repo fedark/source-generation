@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace GeneratorAttributes
+namespace MongoDbAccess
 {
 	[AttributeUsage(AttributeTargets.Class)]
 	public class CachedCollectionAttribute : Attribute
