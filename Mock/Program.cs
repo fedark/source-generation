@@ -12,7 +12,7 @@ namespace Mock
 		}
 	}
 
-	[CachedCollection(TimeScale.Days, 1)]  
+	[CachedCollection(1)]         
 	public class Model : IModel
 	{
 		public string Id { get; set; }

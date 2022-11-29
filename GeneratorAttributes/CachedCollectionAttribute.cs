@@ -5,13 +5,11 @@ namespace GeneratorAttributes
 	[AttributeUsage(AttributeTargets.Class)]
 	public class CachedCollectionAttribute : Attribute
 	{
-		public TimeScale Scale { get; }
-		public long CacheExpiration { get; }
+		public long ExpirationMinutes { get; }
 
-		public CachedCollectionAttribute(TimeScale scale, int cacheExpiration)
+		public CachedCollectionAttribute(int expirationMinutes)
 		{
-			Scale = scale;
-			CacheExpiration = cacheExpiration;
+			ExpirationMinutes = expirationMinutes;
 		}
 	}
 }
