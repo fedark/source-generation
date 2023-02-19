@@ -166,8 +166,9 @@ namespace MongoDbAccess.Generators
                             SingletonList<MemberDeclarationSyntax>(
                                 ClassDeclaration($"Mongo{modelName}Collection")
                                 .WithModifiers(
-                                    TokenList(
-                                        Token(SyntaxKind.PublicKeyword)))
+                                    TokenList(new[] {
+                                        Token(SyntaxKind.PublicKeyword),
+                                        Token(SyntaxKind.PartialKeyword) }))
                                 .WithBaseList(
                                     BaseList(
                                         SingletonSeparatedList<BaseTypeSyntax>(
