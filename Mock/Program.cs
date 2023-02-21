@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Threading.Tasks;
 using MongoDbAccess;
+using MongoDbAccess.DataAccess.Abstractions;
 using MongoDbAccess.Models;
 
 namespace Mock
@@ -16,5 +18,27 @@ namespace Mock
 	public class Model : IModel
 	{
 		public string Id { get; set; }
+	}
+
+	[CollectionInterface]
+	public interface IModelCollection : IDbCollection<Model>
+	{
+		Task AuxOperationAsync(Model model);
+	}
+
+	public partial class MongoModelCollection
+	{
+		public Task AuxOperationAsync(Model model)
+		{
+			Cache.Remove();
+			return Task.CompletedTask;
+		}
+
+		public static void Test()
+		{
+			MongoModelCollection collection = new MongoModelCollection();
+			collection.GetAllAsync();
+			collection.AuxOperationAsync(new());
+		}
 	}
 }

@@ -1,23 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Caching.Memory;
 using MongoDB.Driver;
+using MongoDbAccess.DataAccess.Abstractions;
 using MongoDbAccess.Models;
 
-namespace MongoDbAccess.DataAccess.Abstractions
+namespace MongoDbAccess.DataAccess
 {
-	public abstract class CachedMongoCollection<TDocument> : IDbCollection<TDocument> where TDocument : IModel
+	public class CachedMongoCollection<TDocument> : IDbCollection<TDocument> where TDocument : IModel
 	{
-		protected static readonly string CacheName = $"{typeof(TDocument).Name}Data";
-
 		protected IMongoCollection<TDocument> Documents { get; }
-		protected IMemoryCache Cache { get; }
+		protected MongoCollectionCache<TDocument> Cache { get; }
 
-		protected abstract TimeSpan CacheExpiration { get; }
-
-		public CachedMongoCollection(IDbConnection db, IMemoryCache cache)
+		public CachedMongoCollection(IDbConnection db, MongoCollectionCache<TDocument> cache)
 		{
 			var name = db.GetCollectionName<TDocument>();
 			Documents = db.GetCollection<TDocument>(name);
@@ -27,7 +22,7 @@ namespace MongoDbAccess.DataAccess.Abstractions
 		public async Task CreateAsync(TDocument document)
 		{
 			await Documents.InsertOneAsync(document);
-			Cache.Remove(CacheName);
+			Cache.Remove();
 		}
 
 		public async Task<TDocument?> GetAsync(string id)
@@ -38,12 +33,12 @@ namespace MongoDbAccess.DataAccess.Abstractions
 
 		public async Task<IList<TDocument>> GetAllAsync()
 		{
-			if (Cache.Get<IList<TDocument>>(CacheName) is var cachedDocuments && cachedDocuments is null)
+			if (Cache.Get() is var cachedDocuments && cachedDocuments is null)
 			{
 				var allDocuments = await Documents.FindAsync(_ => true);
 				cachedDocuments = await allDocuments.ToListAsync();
 
-				Cache.Set(CacheName, cachedDocuments, CacheExpiration);
+				Cache.Set(cachedDocuments);
 			}
 
 			return cachedDocuments;
@@ -52,13 +47,13 @@ namespace MongoDbAccess.DataAccess.Abstractions
 		public async Task UpdateAsync(TDocument document)
 		{
 			await Documents.ReplaceOneAsync(k => k.Id == document.Id, document);
-			Cache.Remove(CacheName);
+			Cache.Remove();
 		}
 
 		public async Task RemoveAsync(string id)
 		{
 			await Documents.DeleteOneAsync(k => k.Id == id);
-			Cache.Remove(CacheName);
+			Cache.Remove();
 		}
 	}
 }
