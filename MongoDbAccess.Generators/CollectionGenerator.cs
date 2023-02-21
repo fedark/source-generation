@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -13,29 +12,40 @@ namespace MongoDbAccess.Generators
 	{
         public void Execute(GeneratorExecutionContext context)
         {
-			if (context.SyntaxReceiver is not ModelAttributeSyntaxReceiver syntaxReceiver)
+			if (context.SyntaxReceiver is not ModelSyntaxReceiver syntaxReceiver)
 			{
 				return;
 			}
 
-			foreach (var (@namespace, className, expirationMinutes) in syntaxReceiver.ModelCaptures)
+			foreach (var (@namespace, modelName, expirationMinutes) in syntaxReceiver.ModelAttribute.Captures)
 			{
-				if (!syntaxReceiver.CollectionInterfaceCaptures.TryGetValue(className, out var interfaceName))
+                var baseTypeName = $"I{modelName}Collection";
+                MethodDeclarationSyntax[]? methods = null;
+
+				if (!syntaxReceiver.CollectionDefinitionAttribute.Captures.TryGetValue(modelName, out var baseTypeEntry))
 				{
-                    interfaceName = $"I{className}Collection";
-
-                    context.AddSource($"I{className}Collection.g.cs",
-                        GetInterface(@namespace, className).GetText(Encoding.UTF8));
+                    context.AddSource($"I{modelName}Collection.g.cs",
+                        GetInterface(@namespace, modelName).GetText(Encoding.UTF8));
                 }
+				else
+				{
+                    (baseTypeName, methods) = baseTypeEntry;
+				}
 
-				context.AddSource($"Mongo{className}Collection.g.cs",
-                    GetImplClass(@namespace, interfaceName, className, expirationMinutes).GetText(Encoding.UTF8));
+				context.AddSource($"Mongo{modelName}CollectionBase.g.cs",
+                    GetBaseClass(@namespace, baseTypeName, modelName, expirationMinutes, methods).GetText(Encoding.UTF8));
+
+				if (!syntaxReceiver.CollectionImplementationAttribute.Captures.Contains($"Mongo{modelName}CollectionBase"))
+				{
+                    context.AddSource($"Mongo{modelName}Collection.g.cs",
+                        GetImplClass(@namespace, modelName).GetText(Encoding.UTF8));
+                }
             }
         }
 
-        public void Initialize(GeneratorInitializationContext context)
+		public void Initialize(GeneratorInitializationContext context)
         {
-			context.RegisterForSyntaxNotifications(() => new ModelAttributeSyntaxReceiver());
+			context.RegisterForSyntaxNotifications(() => new ModelSyntaxReceiver());
         }
 
         private CompilationUnitSyntax GetInterface(NamespaceDeclarationSyntax namespaceDeclarationSyntax, string modelName)
@@ -73,67 +83,10 @@ namespace MongoDbAccess.Generators
 
         }
 
-		private CompilationUnitSyntax GetImplClass(NamespaceDeclarationSyntax namespaceDeclarationSyntax, string baseTypeName, string modelName, int expirationMinutes)
+		private CompilationUnitSyntax GetBaseClass(NamespaceDeclarationSyntax namespaceDeclarationSyntax, string baseTypeName,
+            string modelName, int expirationMinutes, MethodDeclarationSyntax[]? methods)
 		{
-            return CompilationUnit()
-            .WithUsings(
-                List<UsingDirectiveSyntax>(
-                    new UsingDirectiveSyntax[]{
-                        UsingDirective(
-                            IdentifierName("System")),
-                        UsingDirective(
-                            QualifiedName(
-                                QualifiedName(
-                                    IdentifierName("System"),
-                                    IdentifierName("Collections")),
-                                IdentifierName("Generic"))),
-                        UsingDirective(
-                            QualifiedName(
-                                QualifiedName(
-                                    IdentifierName("System"),
-                                    IdentifierName("Threading")),
-                                IdentifierName("Tasks"))),
-                        UsingDirective(
-                            QualifiedName(
-                                QualifiedName(
-                                    QualifiedName(
-                                        IdentifierName("Microsoft"),
-                                        IdentifierName("Extensions")),
-                                    IdentifierName("Caching")),
-                                IdentifierName("Memory"))),
-                        UsingDirective(
-                            QualifiedName(
-                                IdentifierName("MongoDB"),
-                                IdentifierName("Driver"))),
-                        UsingDirective(
-                            QualifiedName(
-                                QualifiedName(
-                                    IdentifierName("MongoDbAccess"),
-                                    IdentifierName("DataAccess")),
-                                IdentifierName("Abstractions"))),
-                        UsingDirective(
-                            QualifiedName(
-                                IdentifierName("MongoDbAccess"),
-                                IdentifierName("DataAccess")))}))
-            .WithMembers(
-                SingletonList<MemberDeclarationSyntax>(
-                    NamespaceDeclaration(namespaceDeclarationSyntax.Name)
-                    .WithMembers(
-                        SingletonList<MemberDeclarationSyntax>(
-                            ClassDeclaration($"Mongo{modelName}Collection")
-                            .WithModifiers(
-                                TokenList(
-                                    new[]{
-                                        Token(SyntaxKind.PublicKeyword),
-                                        Token(SyntaxKind.PartialKeyword)}))
-                            .WithBaseList(
-                                BaseList(
-                                    SingletonSeparatedList<BaseTypeSyntax>(
-                                        SimpleBaseType(
-                                            IdentifierName(baseTypeName)))))
-                            .WithMembers(
-                                List<MemberDeclarationSyntax>(
-                                    new MemberDeclarationSyntax[]{
+            var members = new List<MemberDeclarationSyntax>() {
                                         PropertyDeclaration(
                                             GenericName(
                                                 Identifier("IMongoCollection"))
@@ -189,10 +142,10 @@ namespace MongoDbAccess.Generators
                                                     .WithSemicolonToken(
                                                         Token(SyntaxKind.SemicolonToken))))),
                                         ConstructorDeclaration(
-                                            Identifier($"Mongo{modelName}Collection"))
+                                            Identifier($"Mongo{modelName}CollectionBase"))
                                         .WithModifiers(
                                             TokenList(
-                                                Token(SyntaxKind.PublicKeyword)))
+                                                Token(SyntaxKind.ProtectedKeyword)))
                                         .WithParameterList(
                                             ParameterList(
                                                 SeparatedList<ParameterSyntax>(
@@ -431,65 +384,152 @@ namespace MongoDbAccess.Generators
                                                             ArgumentList(
                                                                 SingletonSeparatedList<ArgumentSyntax>(
                                                                     Argument(
-                                                                        IdentifierName("id")))))))))}))))))
-            .NormalizeWhitespace();
-        }
-    }
+                                                                        IdentifierName("id"))))))))) };
 
-	internal class ModelAttributeSyntaxReceiver : ISyntaxReceiver
-	{
-		private static readonly string ModelBaseTypeMarker = "IModel";
-		private static readonly string ModelAttributeMarker = "CachedCollection";
-
-        private static readonly string CollectionInterfaceBaseTypeMarker = "IDbCollection";
-        private static readonly string CollectionInterfaceAttributeMarker = "CollectionInterface";
-
-        public List<(NamespaceDeclarationSyntax Namespace, string ClassName, int ExpirationMinutes)> ModelCaptures { get; } = new();
-        public Dictionary<string, string> CollectionInterfaceCaptures { get; } = new();
-
-        public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
-		{
-            TryCaptureModelSyntaxNode(syntaxNode);
-            TryCaptureCollectionInterfaceSyntaxNode(syntaxNode);
-		}
-
-        private void TryCaptureModelSyntaxNode(SyntaxNode syntaxNode)
-		{
-			if (syntaxNode is AttributeSyntax attributeSyntax
-				&& attributeSyntax.Name.ToString() == ModelAttributeMarker
-                && attributeSyntax.ArgumentList is not null
-				&& attributeSyntax.ArgumentList.Arguments is var arguments 
-				&& arguments.Count == 1
-				&& arguments[0].Expression is LiteralExpressionSyntax argument1
-				&& int.TryParse(argument1.Token.ValueText, out var expiration)
-				&& attributeSyntax.Parent?.Parent is ClassDeclarationSyntax classDeclarationSyntax
-				&& classDeclarationSyntax.BaseList is not null
-				&& classDeclarationSyntax.BaseList.Types.OfType<SimpleBaseTypeSyntax>()
-					.Any(s => s.Type is IdentifierNameSyntax identifierNameSyntax
-						&& identifierNameSyntax.Identifier.ValueText == ModelBaseTypeMarker)
-				&& classDeclarationSyntax.Parent is NamespaceDeclarationSyntax namespaceDeclarationSyntax)
+			if (methods is not null)
 			{
-                ModelCaptures.Add((namespaceDeclarationSyntax, classDeclarationSyntax.Identifier.ValueText, expiration));
+				foreach (var method in methods)
+				{
+                    members.Add(method.WithModifiers(
+                                            TokenList(
+                                                Token(SyntaxKind.PublicKeyword),
+                                                Token(SyntaxKind.AbstractKeyword))));
+				}
 			}
-		}
 
-        private void TryCaptureCollectionInterfaceSyntaxNode(SyntaxNode syntaxNode)
+            return CompilationUnit()
+                .WithUsings(
+                    List<UsingDirectiveSyntax>(
+                        new UsingDirectiveSyntax[]{
+                            UsingDirective(
+                                IdentifierName("System")),
+                            UsingDirective(
+                                QualifiedName(
+                                    QualifiedName(
+                                        IdentifierName("System"),
+                                        IdentifierName("Collections")),
+                                    IdentifierName("Generic"))),
+                            UsingDirective(
+                                QualifiedName(
+                                    QualifiedName(
+                                        IdentifierName("System"),
+                                        IdentifierName("Threading")),
+                                    IdentifierName("Tasks"))),
+                            UsingDirective(
+                                QualifiedName(
+                                    QualifiedName(
+                                        QualifiedName(
+                                            IdentifierName("Microsoft"),
+                                            IdentifierName("Extensions")),
+                                        IdentifierName("Caching")),
+                                    IdentifierName("Memory"))),
+                            UsingDirective(
+                                QualifiedName(
+                                    IdentifierName("MongoDB"),
+                                    IdentifierName("Driver"))),
+                            UsingDirective(
+                                QualifiedName(
+                                    QualifiedName(
+                                        IdentifierName("MongoDbAccess"),
+                                        IdentifierName("DataAccess")),
+                                    IdentifierName("Abstractions"))),
+                            UsingDirective(
+                                QualifiedName(
+                                    IdentifierName("MongoDbAccess"),
+                                    IdentifierName("DataAccess")))}))
+                .WithMembers(
+                    SingletonList<MemberDeclarationSyntax>(
+                        NamespaceDeclaration(namespaceDeclarationSyntax.Name)
+                        .WithMembers(
+                            SingletonList<MemberDeclarationSyntax>(
+                                ClassDeclaration($"Mongo{modelName}CollectionBase")
+                                .WithModifiers(
+                                    TokenList(
+                                        new[]{
+                                            Token(SyntaxKind.PublicKeyword),
+                                            Token(SyntaxKind.AbstractKeyword)}))
+                                .WithBaseList(
+                                    BaseList(
+                                        SingletonSeparatedList<BaseTypeSyntax>(
+                                            SimpleBaseType(
+                                                IdentifierName(baseTypeName)))))
+                                .WithMembers(
+                                    List(members)
+                                    )))))
+                .NormalizeWhitespace();
+        }
+
+        private CompilationUnitSyntax GetImplClass(NamespaceDeclarationSyntax namespaceDeclarationSyntax, string modelName)
         {
-            if (syntaxNode is AttributeSyntax attributeSyntax
-                && attributeSyntax.Name.ToString() == CollectionInterfaceAttributeMarker
-                && attributeSyntax.Parent?.Parent is InterfaceDeclarationSyntax interfaceDeclarationSyntax
-                && interfaceDeclarationSyntax.BaseList is not null
-                && interfaceDeclarationSyntax.BaseList.Types.OfType<SimpleBaseTypeSyntax>()
-                    .FirstOrDefault(s => s.Type is GenericNameSyntax) is var baseNameSyntax
-                && baseNameSyntax is not null
-                && baseNameSyntax.Type is GenericNameSyntax genericNameSyntax
-                && genericNameSyntax.Identifier.ValueText == CollectionInterfaceBaseTypeMarker
-                && genericNameSyntax.TypeArgumentList.Arguments.OfType<IdentifierNameSyntax>()
-                    .FirstOrDefault() is var identifierNameSyntax
-                && identifierNameSyntax is not null)
-            {
-                CollectionInterfaceCaptures[identifierNameSyntax.Identifier.ValueText] = interfaceDeclarationSyntax.Identifier.ValueText;
-            }
+            return CompilationUnit()
+                .WithUsings(
+                    List<UsingDirectiveSyntax>(
+                        new UsingDirectiveSyntax[]{
+                            UsingDirective(
+                                IdentifierName("System")),
+                            UsingDirective(
+                                QualifiedName(
+                                    QualifiedName(
+                                        QualifiedName(
+                                            IdentifierName("Microsoft"),
+                                            IdentifierName("Extensions")),
+                                        IdentifierName("Caching")),
+                                    IdentifierName("Memory"))),
+                            UsingDirective(
+                                QualifiedName(
+                                    QualifiedName(
+                                        IdentifierName("MongoDbAccess"),
+                                        IdentifierName("DataAccess")),
+                                    IdentifierName("Abstractions")))}))
+                .WithMembers(
+                    SingletonList<MemberDeclarationSyntax>(
+                        NamespaceDeclaration(namespaceDeclarationSyntax.Name)
+                        .WithMembers(
+                            SingletonList<MemberDeclarationSyntax>(
+                                ClassDeclaration($"Mongo{modelName}Collection")
+                                .WithModifiers(
+                                    TokenList(
+                                        Token(SyntaxKind.PublicKeyword),
+                                        Token(SyntaxKind.PartialKeyword)))
+                                .WithBaseList(
+                                    BaseList(
+                                        SingletonSeparatedList<BaseTypeSyntax>(
+                                            SimpleBaseType(
+                                                IdentifierName($"Mongo{modelName}CollectionBase")))))
+                                .WithMembers(
+                                    SingletonList<MemberDeclarationSyntax>(
+                                        ConstructorDeclaration(
+                                            Identifier($"Mongo{modelName}Collection"))
+                                        .WithModifiers(
+                                            TokenList(
+                                                Token(SyntaxKind.PublicKeyword)))
+                                        .WithParameterList(
+                                            ParameterList(
+                                                SeparatedList<ParameterSyntax>(
+                                                    new SyntaxNodeOrToken[]{
+                                                        Parameter(
+                                                            Identifier("db"))
+                                                        .WithType(
+                                                            IdentifierName("IDbConnection")),
+                                                        Token(SyntaxKind.CommaToken),
+                                                        Parameter(
+                                                            Identifier("cache"))
+                                                        .WithType(
+                                                            IdentifierName("IMemoryCache"))})))
+                                        .WithInitializer(
+                                            ConstructorInitializer(
+                                                SyntaxKind.BaseConstructorInitializer,
+                                                ArgumentList(
+                                                    SeparatedList<ArgumentSyntax>(
+                                                        new SyntaxNodeOrToken[]{
+                                                            Argument(
+                                                                IdentifierName("db")),
+                                                            Token(SyntaxKind.CommaToken),
+                                                            Argument(
+                                                                IdentifierName("cache"))}))))
+                                        .WithBody(
+                                            Block())))))))
+                .NormalizeWhitespace();
         }
     }
 }

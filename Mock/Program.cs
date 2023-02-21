@@ -1,6 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Caching.Memory;
+using MongoDB.Driver;
 using MongoDbAccess;
+using MongoDbAccess.DataAccess;
 using MongoDbAccess.DataAccess.Abstractions;
 using MongoDbAccess.Models;
 
@@ -20,15 +25,16 @@ namespace Mock
 		public string Id { get; set; }
 	}
 
-	[CollectionInterface]
+	[CollectionDefinition]
 	public interface IModelCollection : IDbCollection<Model>
 	{
 		Task AuxOperationAsync(Model model);
 	}
 
+	//[CollectionImplementation]
 	public partial class MongoModelCollection
 	{
-		public Task AuxOperationAsync(Model model)
+		public override Task AuxOperationAsync(Model model)
 		{
 			Cache.Remove();
 			return Task.CompletedTask;
