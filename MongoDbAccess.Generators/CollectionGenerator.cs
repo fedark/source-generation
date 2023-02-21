@@ -35,11 +35,8 @@ namespace MongoDbAccess.Generators
 				context.AddSource($"Mongo{modelName}CollectionBase.g.cs",
                     GetBaseClass(@namespace, baseTypeName, modelName, expirationMinutes, methods).GetText(Encoding.UTF8));
 
-				if (!syntaxReceiver.CollectionImplementationAttribute.Captures.Contains($"Mongo{modelName}CollectionBase"))
-				{
-                    context.AddSource($"Mongo{modelName}Collection.g.cs",
+                context.AddSource($"Mongo{modelName}Collection.g.cs",
                         GetImplClass(@namespace, modelName).GetText(Encoding.UTF8));
-                }
             }
         }
 

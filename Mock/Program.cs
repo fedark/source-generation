@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Caching.Memory;
-using MongoDB.Driver;
 using MongoDbAccess;
-using MongoDbAccess.DataAccess;
 using MongoDbAccess.DataAccess.Abstractions;
 using MongoDbAccess.Models;
 
@@ -31,7 +26,6 @@ namespace Mock
 		Task AuxOperationAsync(Model model);
 	}
 
-	//[CollectionImplementation]
 	public partial class MongoModelCollection
 	{
 		public override Task AuxOperationAsync(Model model)
