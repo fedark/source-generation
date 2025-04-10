@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MongoExt", "MongoExt\MongoE
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Demo", "Demo\Demo.csproj", "{311CC301-5101-4F16-A0AA-5EA742BFF644}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MongoExt.Generators", "MongoExt.Generators\MongoExt.Generators.csproj", "{8684E289-965E-41B1-9E3D-01B0C982B88C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MongoExt.Generator", "MongoExt.Generator\MongoExt.Generator.csproj", "{8684E289-965E-41B1-9E3D-01B0C982B88C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

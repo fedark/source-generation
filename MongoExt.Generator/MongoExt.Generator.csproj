@@ -8,7 +8,7 @@
     <Authors>fedark</Authors>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IncludeBuildOutput>false</IncludeBuildOutput>
-    <PackageOutputPath>$(ProjectDir)$(OutDir)generated</PackageOutputPath>
+    <PackageOutputPath>package</PackageOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
