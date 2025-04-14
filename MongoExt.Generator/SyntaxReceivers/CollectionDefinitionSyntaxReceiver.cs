@@ -5,10 +5,17 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace MongoExt.Generator.SyntaxReceivers;
 
-internal class CollectionDefinitionAttributeSyntaxReceiver : ISyntaxReceiver
+/// <summary>
+/// <para>
+/// Captures collection definition syntax nodes.
+/// Such node should be an interface that marked with <c>CollectionDefinition</c> attribute and inherits from <c>IDbCollection<![CDATA[<TModel>]]></c> interface
+/// </para>
+/// The node is captured as the following tuple: (<c>TModel</c> type name, (interface name, interface methods))
+/// </summary>
+internal class CollectionDefinitionSyntaxReceiver : ISyntaxReceiver
 {
-    private const string BaseTypeMarker = "IDbCollection";
     private const string AttributeMarker = "CollectionDefinition";
+    private const string BaseTypeMarker = "IDbCollection";
 
     public Dictionary<string, (string BasyTypeName, MethodDeclarationSyntax[] Methods)> Captures { get; } = new();
 

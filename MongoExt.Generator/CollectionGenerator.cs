@@ -15,20 +15,21 @@ public class CollectionGenerator : ISourceGenerator
 
 	public void Initialize(GeneratorInitializationContext context)
 	{
-		context.RegisterForSyntaxNotifications(() => new ModelSyntaxReceiver());
+		context.RegisterForSyntaxNotifications(() => new AggregatedSyntaxReceiver());
 	}
 
 	public void Execute(GeneratorExecutionContext context)
 	{
-		if (context.SyntaxReceiver is not ModelSyntaxReceiver syntaxReceiver)
+		if (context.SyntaxReceiver is not AggregatedSyntaxReceiver syntaxReceiver)
 			return;
 
-		foreach (var (@namespace, modelName, expirationMinutes) in syntaxReceiver.ModelAttribute.Captures)
+		foreach (var (@namespace, modelName, expirationMinutes) in syntaxReceiver.ModelSyntaxReceiver.Captures)
 		{
 			var baseTypeName = $"I{modelName}Collection";
 			MethodDeclarationSyntax[]? methods = null;
 
-			if (!syntaxReceiver.CollectionDefinitionAttribute.Captures.TryGetValue(modelName, out var baseTypeEntry))
+			// add an interface for a model if not exist
+			if (!syntaxReceiver.CollectionDefinitionSyntaxReceiver.Captures.TryGetValue(modelName, out var baseTypeEntry))
 			{
 				context.AddSource($"I{modelName}Collection.g.cs",
 					GetInterface(@namespace, modelName).GetText(Encoding.UTF8));
@@ -38,10 +39,10 @@ public class CollectionGenerator : ISourceGenerator
 				(baseTypeName, methods) = baseTypeEntry;
 			}
 
-			context.AddSource($"Mongo{modelName}CollectionBase.g.cs",
+			context.AddSource($"{modelName}CollectionBase.g.cs",
 				GetBaseClass(@namespace, baseTypeName, modelName, expirationMinutes, methods).GetText(Encoding.UTF8));
 
-			context.AddSource($"Mongo{modelName}Collection.g.cs",
+			context.AddSource($"{modelName}Collection.g.cs",
 				GetImplClass(@namespace, modelName).GetText(Encoding.UTF8));
 		}
 	}
