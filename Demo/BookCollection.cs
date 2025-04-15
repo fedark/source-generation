@@ -4,7 +4,7 @@ namespace Demo;
 
 public partial class BookMongoCollection
 {
-	public override Task<string> GetTitle(Book book)
+	public Task<string> GetTitle(Book book)
 	{
 		return Task.FromResult(book.Title);
 	}

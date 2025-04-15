@@ -15,76 +15,76 @@ public class CollectionGenerator : ISourceGenerator
 
 	public void Initialize(GeneratorInitializationContext context)
 	{
-		context.RegisterForSyntaxNotifications(() => new AggregatedSyntaxReceiver());
+		//context.RegisterForSyntaxNotifications(() => new AggregatedSyntaxReceiver());
 	}
 
 	public void Execute(GeneratorExecutionContext context)
 	{
-		if (context.SyntaxReceiver is not AggregatedSyntaxReceiver syntaxReceiver)
-			return;
+		//if (context.SyntaxReceiver is not AggregatedSyntaxReceiver syntaxReceiver)
+		//	return;
 
-		foreach (var (@namespace, modelName, expirationMinutes) in syntaxReceiver.ModelSyntaxReceiver.Captures)
-		{
-			var baseTypeName = $"I{modelName}Collection";
-			MethodDeclarationSyntax[]? methods = null;
+		//foreach (var (@namespace, modelName, expirationMinutes) in syntaxReceiver.ModelSyntaxReceiver.Captures)
+		//{
+		//	var baseTypeName = $"I{modelName}Collection";
+		//	MethodDeclarationSyntax[]? methods = null;
 
-			// add an interface for a model if not exist
-			if (!syntaxReceiver.CollectionDefinitionSyntaxReceiver.Captures.TryGetValue(modelName, out var baseTypeEntry))
-			{
-				context.AddSource($"I{modelName}Collection.g.cs",
-					GetInterface(@namespace, modelName).GetText(Encoding.UTF8));
-			}
-			else
-			{
-				(baseTypeName, methods) = baseTypeEntry;
-			}
+		//	// add an interface for a model if not exist
+		//	if (!syntaxReceiver.CollectionDefinitionSyntaxReceiver.Captures.TryGetValue(modelName, out var baseTypeEntry))
+		//	{
+		//		context.AddSource($"I{modelName}Collection.g.cs",
+		//			GetInterface(@namespace, modelName).GetText(Encoding.UTF8));
+		//	}
+		//	else
+		//	{
+		//		(baseTypeName, methods) = baseTypeEntry;
+		//	}
 
-			context.AddSource($"{modelName}CollectionBase.g.cs",
-				GetBaseClass(@namespace, baseTypeName, modelName, expirationMinutes, methods).GetText(Encoding.UTF8));
+		//	context.AddSource($"{modelName}CollectionBase.g.cs",
+		//		GetBaseClass(@namespace, baseTypeName, modelName, expirationMinutes, methods).GetText(Encoding.UTF8));
 
-			context.AddSource($"{modelName}Collection.g.cs",
-				GetImplClass(@namespace, modelName).GetText(Encoding.UTF8));
-		}
+		//	context.AddSource($"{modelName}Collection.g.cs",
+		//		GetImplClass(@namespace, modelName).GetText(Encoding.UTF8));
+		//}
 	}
 
 	#endregion
 
 	#region Private Methods
 
-	private CompilationUnitSyntax GetInterface(NamespaceDeclarationSyntax namespaceDeclarationSyntax, string modelName)
-	{
-		return CompilationUnit()
-			.WithUsings(
-				SingletonList<UsingDirectiveSyntax>(
-					UsingDirective(
-						QualifiedName(
-							QualifiedName(
-								IdentifierName("MongoDbAccess"),
-								IdentifierName("DataAccess")),
-							IdentifierName("Abstractions")))))
-			.WithMembers(
-				SingletonList<MemberDeclarationSyntax>(
-					NamespaceDeclaration(namespaceDeclarationSyntax.Name)
-						.WithMembers(
-							SingletonList<MemberDeclarationSyntax>(
-								InterfaceDeclaration($"I{modelName}Collection")
-									.WithModifiers(
-										TokenList(
-											new[]{
-												Token(SyntaxKind.PublicKeyword)}))
-									.WithBaseList(
-										BaseList(
-											SingletonSeparatedList<BaseTypeSyntax>(
-												SimpleBaseType(
-													GenericName(
-															Identifier("IDbCollection"))
-														.WithTypeArgumentList(
-															TypeArgumentList(
-																SingletonSeparatedList<TypeSyntax>(
-																	IdentifierName(modelName))))))))))))
-			.NormalizeWhitespace();
+	//public static CompilationUnitSyntax GetInterface(string s, string modelName)
+	//{
+	//	return CompilationUnit()
+	//		.WithUsings(
+	//			SingletonList<UsingDirectiveSyntax>(
+	//				UsingDirective(
+	//					QualifiedName(
+	//						QualifiedName(
+	//							IdentifierName("MongoDbAccess"),
+	//							IdentifierName("DataAccess")),
+	//						IdentifierName("Abstractions")))))
+	//		.WithMembers(
+	//			SingletonList<MemberDeclarationSyntax>(
+	//				NamespaceDeclaration(s)
+	//					.WithMembers(
+	//						SingletonList<MemberDeclarationSyntax>(
+	//							InterfaceDeclaration($"I{modelName}Collection")
+	//								.WithModifiers(
+	//									TokenList(
+	//										new[]{
+	//											Token(SyntaxKind.PublicKeyword)}))
+	//								.WithBaseList(
+	//									BaseList(
+	//										SingletonSeparatedList<BaseTypeSyntax>(
+	//											SimpleBaseType(
+	//												GenericName(
+	//														Identifier("IDbCollection"))
+	//													.WithTypeArgumentList(
+	//														TypeArgumentList(
+	//															SingletonSeparatedList<TypeSyntax>(
+	//																IdentifierName(modelName))))))))))))
+	//		.NormalizeWhitespace();
 
-	}
+	//}
 
 	private CompilationUnitSyntax GetBaseClass(NamespaceDeclarationSyntax namespaceDeclarationSyntax, string baseTypeName,
 		string modelName, int expirationMinutes, MethodDeclarationSyntax[]? methods)
