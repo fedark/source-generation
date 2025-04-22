@@ -1,26 +1,25 @@
-﻿//Console.WriteLine(typeof(TestB));
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
-using System.Text;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
+﻿using Demo;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.DependencyInjection;
+using MongoExt.Interfaces;
+using MongoExt.Impl;
 
-Console.WriteLine(DbCollectionInterfaceCode.GetCode("XXX", "ZZZ"));
-return;
+var host = Host
+    .CreateDefaultBuilder()
+    .ConfigureServices(services =>
+    {
+        services.AddMemoryCache();
+        services.AddSingleton<IMongoDbContext, MongoDbContext>(provider => new MongoDbContext("mongodb://localhost:27017/", "source-generation"));
+        services.AddSingleton<IBookRepository, BookRepository>();
+    })
+    .Build();
 
+var books = host.Services.GetRequiredService<IBookRepository>();
 
-internal static class DbCollectionInterfaceCode
-{
-	public static string GetCode(string targetNamespace, string modelName)
-	{
-		return $$"""
-		         using MongoExt.Interface;
+books.Add(new Book { Title = "Onegin" });
+await books.CreateAsync(new Book { Title = "Idiot" });
 
-		         namespace {{targetNamespace}};
+var book = new Book { Title = "Animal Farm" };
+books.Add(book);
 
-		         public interface I{{modelName}}DbCollection : IDbCollection<{{modelName}}>
-		         {
-		         }
-		         """;
-	}
-}
+Console.WriteLine((await books.GetAsync(book.Id!))?.Title);

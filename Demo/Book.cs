@@ -1,11 +1,25 @@
-﻿using MongoExt.Attributes;
-using MongoExt.Interface;
+﻿using MongoExt.Interfaces;
+using MongoExt.Generator;
+using MongoDB.Bson.Serialization.Attributes;
+using MongoDB.Bson;
 
 namespace Demo;
 
-[CachedCollection(1)]
-public class Book : IModel
+[Entity("books", 10)]
+public class Book : IEntity
 {
-	public required string Id { get; set; }
-	public required string Title { get; set; }
+    [BsonId]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string? Id { get; set; }
+    public required string Title { get; set; }
+}
+
+public partial interface IBookRepository
+{
+    void Add(Book book);
+}
+
+public partial class BookRepository
+{
+    public void Add(Book book) => CreateAsync(book).Wait();
 }
