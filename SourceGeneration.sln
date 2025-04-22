@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.13.35931.197
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MongoExt.Generator", "MongoExt.Generator\MongoExt.Generator.csproj", "{5095272C-E59B-41D7-AC51-1AD727E5529B}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo", "Demo\Demo.csproj", "{257DF7E9-A5BA-4C13-BB59-E236C0862B26}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MongoExt.Generator", "MongoExt.Generator\MongoExt.Generator.csproj", "{5095272C-E59B-41D7-AC51-1AD727E5529B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MongoExt", "MongoExt\MongoExt.csproj", "{2A932EB3-D88D-4CA4-9247-B53452AEF0DA}"
 EndProject
